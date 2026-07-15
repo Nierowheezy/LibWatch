@@ -1,0 +1,6 @@
+{
+  "name": "LibWatch",
+  "description": "A live-refreshing full-stack web application tracking last-updated times, release activity trends, and system telemetry of popular NPM packages and GitHub repositories.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
