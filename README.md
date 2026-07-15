@@ -1,4 +1,6 @@
-# LibWatch — Registry Telemetry Analyzer
+# LibWatch
+
+![LibWatch](./assets/LibWatch.png)
 
 LibWatch is a streamlined, high-density telemetry dashboard engineered for software developers to track release activity, modify dates, modification tags, and activity velocities across **NPM Packages** and **GitHub Repositories**.
 
@@ -22,7 +24,7 @@ Designed with an aesthetic reminiscent of diagnostic terminals, LibWatch ensures
 
 ```text
 /src
-├── types.ts                     # TypeScript Type Declarations 
+├── types.ts                     # TypeScript Type Declarations
 ├── utils.ts                     # Helper date formattings & trend data generators
 ├── main.tsx                     # React application Entry handler
 ├── App.tsx                      # Main coordinating react component orchestrator
