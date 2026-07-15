@@ -1,6 +1,7 @@
 # LibWatch
 
 ![LibWatch](./assets/LibWatch.png)
+![LibWatch](./assets/LibWatch2.png)
 
 LibWatch is a streamlined, high-density telemetry dashboard engineered for software developers to track release activity, modify dates, modification tags, and activity velocities across **NPM Packages** and **GitHub Repositories**.
 
