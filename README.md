@@ -3,7 +3,7 @@
 ![LibWatch](./assets/LibWatch.png)
 ![LibWatch](./assets/LibWatch2.png)
 
-LibWatch is a streamlined, high-density telemetry dashboard engineered for software developers to track release activity, modify dates, modification tags, and activity velocities across **NPM Packages** and **GitHub Repositories**.
+LibWatch is a streamlined, high-density Monitoring dashboard engineered for software developers to track release activity, modify dates, modification tags, and activity velocities across **NPM Packages** and **GitHub Repositories**.
 
 Designed with an aesthetic reminiscent of diagnostic terminals, LibWatch ensures you are always briefed on critical framework modifications, dependencies updates, and core repository commit trends without navigating away from your primary workflow.
 
@@ -37,7 +37,7 @@ Designed with an aesthetic reminiscent of diagnostic terminals, LibWatch ensures
     ├── AddLibraryForm.tsx       # Package track creation selectors & toast messages
     ├── SettingsDrawer.tsx       # Sliders controls, keybind binds, tone chimes, theme accents
     ├── LibraryTable.tsx         # Sorting columns, drag handles, expand lines, sparklines
-    └── SidebarInspector.tsx     # Resource inspector panel displaying YAML telemetry details
+    └── SidebarInspector.tsx     # Resource inspector panel displaying YAML Monitoring details
 ```
 
 ---
