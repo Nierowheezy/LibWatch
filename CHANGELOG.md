@@ -5,6 +5,24 @@ All notable changes to **LibWatch** are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-09-11
+
+### Added
+
+- MIT License file.
+- `CONTRIBUTING.md` — setup, code style, and PR workflow guidelines.
+- `BUILDPLAN.md` — full project plan and build roadmap covering v1.0 through v2.0.
+- Comprehensive README covering use cases, architecture, API reference, roadmap, and deployment guide.
+
+### Changed
+
+- `package.json`: corrected project name to `libwatch`, set version to `1.0.1`, added `license: "MIT"` field.
+
+### Improved
+
+- Added honest note to README API reference that NPM `stars` and `openIssues` are hash-based estimates.
+- README now documents the planned v2.0 roadmap: documentation panel, documentation API, MCP server, and official doc site integration.
+
 ## [1.0.0] - 2026-09-11
 
 ### Added
