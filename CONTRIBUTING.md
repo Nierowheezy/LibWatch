@@ -83,10 +83,13 @@ Both must pass before opening a PR. The CI will catch regressions.
 | `app.ts` | Express app factory — API routes + static serving. Shared by local server and Vercel serverless. |
 | `server.ts` | Local dev/prod server entry. Adds Vite middleware in dev mode. |
 | `api/index.ts` | Vercel serverless entry point. Wraps `createApp()`. |
+| `server/cache.ts` | Generic in-memory cache helpers (per-key TTL). |
+| `server/registry.ts` | Docs + library-resolution providers (npm + GitHub), shared by REST and MCP. |
+| `server/mcp.ts` | Streamable-HTTP JSON-RPC handler for the MCP tool server. |
 | `src/` | React frontend (components, types, utils). |
 | `vercel.json` | Vercel build + routing config. |
 
-If you're adding a new API route, add it in `app.ts` inside `createApp()`. If you're adding a new React component, place it in `src/components/`.
+If you're adding a new API route, add it in `app.ts` inside `createApp()`, and where it tabs into docs/search logic, extend `server/registry.ts`. If you're adding a new React component, place it in `src/components/`.
 
 ---
 

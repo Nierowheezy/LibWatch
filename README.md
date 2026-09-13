@@ -3,7 +3,7 @@
 ![LibWatch — dashboard showing tracked NPM packages and GitHub repositories](./assets/LibWatch.png)
 ![LibWatch — expandable detail panel with 30-day sparkline analytics](./assets/LibWatch2.png)
 
-> Live deployment: **https://libwatch.vercel.app** | Latest release: [v1.0.1](https://github.com/Nierowheezy/LibWatch/releases/latest)
+> Live deployment: **https://libwatch.vercel.app** | Latest release: [v2.0.0](https://github.com/Nierowheezy/LibWatch/releases/latest)
 
 LibWatch is a library intelligence platform for software developers. It serves two audiences from a single codebase:
 
@@ -54,7 +54,7 @@ All tracked entries are stored in your browser's `localStorage`, so nothing is s
 
 **Release watch.** Keep a pinned list of the frameworks and tools your project depends on. The auto-sync countdown polls them on your configured schedule, so you know the moment a new version ships.
 
-**AI-agent context.** The existing REST API returns live metadata for any package or repo. The planned MCP server will let coding tools like Cursor, Claude Code, and Copilot resolve library names, fetch current documentation, and generate code against real version data — eliminating hallucinated APIs and outdated examples.
+**AI-agent context.** Live metadata plus full documentation are served to AI coding tools through a REST API and a native MCP tool server (`/api/mcp`). Tools like Cursor and Claude Code can resolve library names, fetch current documentation, and generate code against real version data instead of stale training snapshots.
 
 **Open-source project monitoring.** Track your own repos or upstream projects you care about. Stars, forks, issues, and subscriber counts update on every sync cycle.
 
@@ -65,12 +65,14 @@ All tracked entries are stored in your browser's `localStorage`, so nothing is s
 - **High-contrast dark aesthetic** — deep-space slate palettes with dynamic accent colors (cyan, emerald, violet, orange, rose) providing distinctive visual feedback.
 - **Micro-conversational transitions** — staggered layout entry animations.
 - **Auto-sync countdown clock** — active, automated time dials that poll library versions and repository commit pacing continuously; pause and resume with a single click.
-- **Resource inspector** — a monospace, YAML-formatted detail panel with instant documentation open triggers and direct endpoint querying.
+- **Resource inspector** — a monospace, YAML-formatted detail panel with **Metadata / Docs / Raw** tabs, inline markdown documentation, and direct endpoint querying.
+- **In-panel documentation** — README and CHANGELOG content rendered inline (markdown support via `react-markdown`), fetched and cached upstream.
 - **30-day sparkline analytics** — area curves visualizing release frequency and commit density over time.
 - **Manual priority sort** — drag-and-drop handles to re-order tracked libraries and establish custom priorities.
 - **Global keyboard hotkeys** — configurable in workspace settings: trigger a manual check (`S` by default) or focus the search form (`/` by default).
 - **High-density table layout** — sortable columns with expandable lines for quick inspection.
-- **REST API** — two public endpoints serve live library metadata to any consumer, including AI coding tools.
+- **Open REST API** — five public endpoints serve live metadata, documentation, and search results to any consumer, including AI coding tools.
+- **MCP tool server** — a Model Context Protocol endpoint (`POST /api/mcp`) exposing `resolve-library-id` and `query-docs` for AI coding agents.
 
 ---
 
@@ -126,6 +128,10 @@ https://libwatch.vercel.app/
 |   +-- index.ts                 # Vercel serverless entry (wraps createApp)
 +-- assets/                      # Screenshots used in this README
 +-- dist/                        # Build output (generated)
++-- server/                      # Shared backend layer
+|   +-- cache.ts                 # Generic in-memory cache helpers
+|   +-- registry.ts              # Docs + library resolution (npm/GitHub)
+|   +-- mcp.ts                   # MCP JSON-RPC handler (tools/list + tools/call)
 +-- src/
 |   +-- types.ts                 # TypeScript type declarations
 |   +-- utils.ts                 # Date formatting & trend data generators
@@ -139,7 +145,7 @@ https://libwatch.vercel.app/
 |       +-- AddLibraryForm.tsx   # Package/repo tracking selector + toasts
 |       +-- SettingsDrawer.tsx   # Sliders, keybinds, tone chimes, accents
 |       +-- LibraryTable.tsx     # Sortable columns, drag handles, sparklines
-|       +-- SidebarInspector.tsx # YAML-format resource inspector
+|       +-- SidebarInspector.tsx # Metadata/Docs/Raw resource inspector
 +-- app.ts                       # Express app factory (API routes + static)
 +-- server.ts                    # Local dev/prod server entry
 +-- vercel.json                  # Vercel build & routing config
@@ -224,14 +230,94 @@ curl "https://libwatch.vercel.app/api/github-update?repo=vercel/next.js"
 
 > The `size` field for GitHub repos is reported in KB by the GitHub API.
 
+### `GET /api/library-docs?library=<name>`
+
+Fetches documentation content (README and CHANGELOG) for a library. Accepts either an npm package name or a GitHub repository in `owner/repo` format. Content is cached for 5 minutes.
+
+| Query param | Type   | Required | Description                                     |
+| ----------- | ------ | -------- | ----------------------------------------------- |
+| `library`   | string | yes      | npm package name or `owner/repo`                |
+
+Example:
+
+```bash
+curl "https://libwatch.vercel.app/api/library-docs?library=express"
+```
+
+```json
+{
+  "library": "express",
+  "version": "5.2.1",
+  "readme": "# Express\n\nFast, unopinionated...",
+  "changelog": "History\n=======\n\n2025-07-08, ...",
+  "documentation": [
+    { "type": "readme", "title": "README", "url": "https://expressjs.com/" },
+    { "type": "changelog", "title": "CHANGELOG", "url": "https://github.com/expressjs/express" }
+  ],
+  "source": "npm",
+  "fetchedAt": "2026-09-13T12:00:00Z"
+}
+```
+
+When the npm registry entry omits its `readme` field, LibWatch falls back to the package's GitHub repository (`README.md`, `Readme.md`, `readme.md`, or `README.markdown`). Changelog discovery scans `CHANGELOG.md` and `History.md`.
+
+### `GET /api/library-resolve?q=<query>&limit=<n>`
+
+Searches for libraries matching a natural-language query, ranked across the npm registry and GitHub repositories. Results are cached for 60 seconds.
+
+| Query param | Type   | Required | Description                         |
+| ----------- | ------ | -------- | ----------------------------------- |
+| `q`         | string | yes      | Natural-language search query       |
+| `limit`     | number | no       | Max results (1-20, default 8)       |
+
+Example:
+
+```bash
+curl "https://libwatch.vercel.app/api/library-resolve?q=react%20form%20validation"
+```
+
+```json
+{
+  "query": "react form validation",
+  "limit": 3,
+  "totalResults": 3,
+  "results": [
+    { "id": "react-hook-form", "name": "react-hook-form", "source": "npm", "description": "Performant forms with easy validation", "score": 0.95 },
+    { "id": "formik", "name": "formik", "source": "npm", "description": "Build forms in React, without tears", "score": 0.87 }
+  ]
+}
+```
+
+### `POST /api/mcp` — MCP server (tool server)
+
+LibWatch exposes a Model Context Protocol **tool server** over Streamable HTTP for AI coding agents (Cursor, Claude Code, Codex, etc.):
+
+| Tool                  | Purpose                                                    |
+| --------------------- | ---------------------------------------------------------- |
+| `resolve-library-id`  | Resolves a natural-language query into ranked library IDs  |
+| `query-docs`          | Fetches current README + CHANGELOG for a specific library  |
+
+Configure an agent with the URL `https://libwatch.vercel.app/api/mcp`. Example (Claude Code / `~/.claude.json` or `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "libwatch": { "url": "https://libwatch.vercel.app/api/mcp" }
+  }
+}
+```
+
+The endpoint is a stateless JSON-RPC implementation (initialize / tools/list / tools/call / ping / notifications) that reuses the same shared registry layer as the REST API.
+
 ---
 
 ## Data and caching behavior
 
-- Both endpoints cache results in an in-memory Map for **30 seconds** (`CACHE_TTL_MS`).
+- **Metadata endpoints** (`/api/npm-update`, `/api/github-update`) cache in-memory for **30 seconds**.
+- **Docs endpoint** (`/api/library-docs`) caches in-memory for **5 minutes**.
+- **Search endpoint** (`/api/library-resolve`) caches in-memory for **60 seconds**.
 - Responses include a `source` field: `"live"` when fetched fresh from upstream, `"cache"` when returned from the in-memory cache.
-- The GitHub route fetches the latest commit and repository metadata in parallel.
-- The GitHub route sends a `User-Agent` header (required by GitHub) and automatically attaches an auth token when `GITHUB_TOKEN` is set, which dramatically raises the API rate limit.
+- The GitHub routes send a `User-Agent` header (required by GitHub) and automatically attach an auth token when `GITHUB_TOKEN` is set, which dramatically raises the API rate limit.
 
 ---
 
@@ -319,9 +405,9 @@ PORT=3000 NODE_ENV=production npm start
 
 ## Roadmap
 
-LibWatch is evolving from a metadata-only monitoring dashboard into a full library intelligence platform. Here is what exists today and what is planned:
+### Shipped (v1.x + v2.0)
 
-### Shipped (v1.0)
+**v1.0 — Monitoring dashboard + REST metadata API**
 
 - High-density monitoring dashboard for NPM packages and GitHub repositories.
 - REST API serving live metadata (`/api/npm-update`, `/api/github-update`).
@@ -330,25 +416,17 @@ LibWatch is evolving from a metadata-only monitoring dashboard into a full libra
 - Browser `localStorage` persistence for tracked entries.
 - Deployed on Vercel as a serverless function plus static frontend.
 
-### Planned (v2.0)
+**v2.0 — Documentation + agent intelligence layer**
 
-The next major release adds a documentation layer that serves both human developers and AI coding agents.
+- **Documentation panel** — a "Docs" tab (plus a "Raw" JSON tab) in the resource inspector renders README and CHANGELOG content inline with markdown styling.
+- **Documentation API** — `/api/library-docs` returns README/CHANGELOG for any npm package or GitHub repo; `/api/library-resolve` ranks libraries from a natural-language query.
+- **MCP tool server** — `POST /api/mcp` exposes `resolve-library-id` and `query-docs` for AI coding agents (Cursor, Claude Code, Codex, Copilot, etc.). Serve current docs to agents so they code against real metadata, not stale training snapshots.
 
-**Documentation panel in the dashboard.** A new "Docs" tab in the SidebarInspector renders README and CHANGELOG content inline, fetched from npm and GitHub. No tab-switching required to read a library's documentation.
+### Planned (v3.0 and beyond)
 
-**Documentation API.** Two new endpoints:
-
-- `GET /api/library-docs?library=<name>` — returns README, CHANGELOG, and a list of available documentation sources for a library.
-- `GET /api/library-resolve?q=<query>` — resolves a search query into matched library IDs across npm and GitHub.
-
-**MCP server.** An MCP-compatible server exposing two tools for AI coding agents (Cursor, Claude Code, Copilot, etc.):
-
-- `resolve-library-id` — finds the right library from a natural-language query.
-- `query-docs` — fetches current documentation and code examples for a specific library and version.
-
-This mirrors how services like Context7 give AI tools access to up-to-date library documentation. LibWatch's MCP server will be installable as an HTTP endpoint on the existing Vercel deployment, requiring no separate infrastructure.
-
-**Official doc site integration.** For major frameworks (React, Next.js, Express, Vue, etc.), LibWatch will fetch and serve documentation from official sources, going beyond README files to cover API references and guides.
+- **Official doc site integration.** For major frameworks (React, Next.js, Express, Vue, etc.), fetch and serve documentation from official sources — going beyond README files to cover API references and guides.
+- **Deep search across tracked libraries.** Semantic search over every library's fetched documentation.
+- **Team workspaces / shared tracking**, database persistence beyond `localStorage`, and webhook/email notifications for new releases.
 
 For the detailed build plan, implementation phases, and file-level changes, see [BUILDPLAN.md](./BUILDPLAN.md).
 

@@ -25,6 +25,22 @@ export interface TrackedLibrary {
 export type SortField = "name" | "type" | "lastUpdated" | "status" | "manual";
 export type SortOrder = "asc" | "desc";
 
+export interface LibraryDocSource {
+  type: string;
+  title: string;
+  url: string;
+}
+
+export interface LibraryDocs {
+  library: string;
+  version?: string;
+  readme: string | null;
+  changelog: string | null;
+  documentation: LibraryDocSource[];
+  source: "npm" | "github";
+  fetchedAt: string;
+}
+
 export interface AppSettings {
   syncIntervalValue: number;
   syncIntervalUnit: "seconds" | "minutes" | "hours" | "days";

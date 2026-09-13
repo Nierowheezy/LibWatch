@@ -113,11 +113,11 @@ export function LibraryTable({
     const diffDays = Math.max(0, diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays <= 14) {
-      return <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0 select-none cursor-help animate-none" title={`Accelerating: updated ${Math.round(diffDays)} days ago.`} />;
+      return <span className="inline-flex shrink-0" title={`Accelerating: updated ${Math.round(diffDays)} days ago.`}><TrendingUp className="w-3.5 h-3.5 text-emerald-500 select-none cursor-help animate-none" /></span>;
     } else if (diffDays <= 45) {
-      return <Minus className="w-3.5 h-3.5 text-zinc-500 shrink-0 select-none cursor-help animate-none" title={`Stable: updated ${Math.round(diffDays)} days ago.`} />;
+      return <span className="inline-flex shrink-0" title={`Stable: updated ${Math.round(diffDays)} days ago.`}><Minus className="w-3.5 h-3.5 text-zinc-500 select-none cursor-help animate-none" /></span>;
     } else {
-      return <TrendingDown className="w-3.5 h-3.5 text-red-500 shrink-0 select-none cursor-help animate-none" title={`Slowing Down: updated ${Math.round(diffDays)} days ago.`} />;
+      return <span className="inline-flex shrink-0" title={`Slowing Down: updated ${Math.round(diffDays)} days ago.`}><TrendingDown className="w-3.5 h-3.5 text-red-500 select-none cursor-help animate-none" /></span>;
     }
   };
 
@@ -254,7 +254,7 @@ export function LibraryTable({
                     <React.Fragment key={lib.id}>
                       <motion.tr
                         draggable={dragReadyId === lib.id}
-                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, index)}
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDrop={(e) => handleDrop(e, index)}
                         onDragEnd={handleDragEnd}
